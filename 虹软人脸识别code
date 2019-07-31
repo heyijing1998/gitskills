@@ -1,0 +1,389 @@
+// Project5.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
+//
+#include "pch.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "arcsoft_face_sdk.h"
+#include "amcomdef.h"
+#include "asvloffscreen.h"
+#include "merror.h"
+#include <direct.h> 
+#include <iostream>  
+#include <stdarg.h>
+#include <opencv2\opencv.hpp>
+
+using namespace cv;  //包含cv命名空间
+using namespace std;
+#pragma comment(lib, "libarcsoft_face_engine.lib")
+
+#define APPID "官网下载APPID"
+#define SDKKey "官网下载ADKKey"
+
+#define SafeFree(p) { if ((p)) free(p); (p) = NULL; }
+#define SafeArrayDelete(p) { if ((p)) delete [] (p); (p) = NULL; } 
+#define SafeDelete(p) { if ((p)) delete (p); (p) = NULL; } 
+
+#define VNAME(name)(#name)
+
+//裁剪图片
+void CutIplImage(IplImage* src, IplImage* dst, int x, int y)
+{
+	CvSize size = cvSize(dst->width, dst->height);//区域大小
+	cvSetImageROI(src, cvRect(x, y, size.width, size.height));//设置源图像ROI
+	cvCopy(src, dst); //复制图像
+	cvResetImageROI(src);//源图像用完后，清空ROI
+}
+char c1[] = "8aBwAhT2HWJhjEgXHrDuDX1NoP5wBtWdAAYFKw2REMtp";
+char c2[] = "FAHGfh3waQDow9He1fy6YzuyCWDoZU2MhQZ4oXBuUErW";
+float a[5];
+const char *b[5] = {"xrh","wt","syq","lyp","zwl"};//姓名数组
+const char *d[5] = { "0","1","2","3","4" };//人脸个数数组
+const char *e[1];
+int i, index_max;//比较结果大小变量
+
+int main()
+{
+	
+	//激活接口
+	MRESULT res = ASFActivation(c1, c2);
+	if (MOK != res && MERR_ASF_ALREADY_ACTIVATED != res)
+		printf("ASFActivation fail: %d\n", res);
+	else
+		printf("ASFActivation sucess: %d\n", res);
+
+	//初始化接口
+	MHandle handle = NULL;
+	MInt32 mask = ASF_FACE_DETECT | ASF_FACERECOGNITION | ASF_AGE ;
+	res = ASFInitEngine(ASF_DETECT_MODE_IMAGE, ASF_OP_0_ONLY, 32, 1, mask, &handle);
+	if (res != MOK)
+		printf("ASFInitEngine fail: %d\n", res);
+	else
+		printf("ASFInitEngine sucess: %d\n", res);
+
+	VideoCapture capture(0);//打开摄像头
+	
+	//第一人脸特征
+	IplImage* img0 = cvLoadImage("aaa.jpg");
+	ASF_MultiFaceInfo detectedFaces1 = { 0 };
+	ASF_SingleFaceInfo SingleDetectedFaces1 = { 0 };
+	ASF_FaceFeature feature1 = { 0 };
+	ASF_FaceFeature copyfeature1 = { 0 };
+	IplImage* cutImg0 = cvCreateImage(cvSize(img0->width - img0->width % 4, img0->height), IPL_DEPTH_8U, img0->nChannels);
+	CutIplImage(img0, cutImg0, 0, 0);
+	res = ASFDetectFaces(handle, cutImg0->width, cutImg0->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg0->imageData, &detectedFaces1);
+	if (MOK == res)
+	{
+		SingleDetectedFaces1.faceRect.left = detectedFaces1.faceRect[0].left;
+		SingleDetectedFaces1.faceRect.top = detectedFaces1.faceRect[0].top;
+		SingleDetectedFaces1.faceRect.right = detectedFaces1.faceRect[0].right;
+		SingleDetectedFaces1.faceRect.bottom = detectedFaces1.faceRect[0].bottom;
+		SingleDetectedFaces1.faceOrient = detectedFaces1.faceOrient[0];
+
+		res = ASFFaceFeatureExtract(handle, cutImg0->width, cutImg0->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg0->imageData, &SingleDetectedFaces1, &feature1);
+		if (res == MOK)
+		{
+			//拷贝feature
+			copyfeature1.featureSize = feature1.featureSize;
+			copyfeature1.feature = (MByte *)malloc(feature1.featureSize);
+			memset(copyfeature1.feature, 0, feature1.featureSize);
+			memcpy(copyfeature1.feature, feature1.feature, feature1.featureSize);
+		}
+		else
+			printf("ASFFaceFeatureExtract 1 fail: %d\n", res);
+	}
+	else
+		printf("ASFDetectFaces 1 fail: %d\n", res);
+
+
+	//第二个人脸特征
+	IplImage* img2 = cvLoadImage("wt.jpg");
+	ASF_MultiFaceInfo detectedFaces3 = { 0 };
+	ASF_SingleFaceInfo SingleDetectedFaces3 = { 0 };
+	ASF_FaceFeature feature3 = { 0 };
+	ASF_FaceFeature copyfeature2 = { 0 };
+	IplImage* cutImg2 = cvCreateImage(cvSize(img2->width - img2->width % 4, img2->height), IPL_DEPTH_8U, img2->nChannels);
+	CutIplImage(img2, cutImg2, 0, 0);
+	res = ASFDetectFaces(handle, cutImg2->width, cutImg2->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg2->imageData, &detectedFaces3);
+	if (MOK == res)
+	{
+		SingleDetectedFaces3.faceRect.left = detectedFaces3.faceRect[0].left;
+		SingleDetectedFaces3.faceRect.top = detectedFaces3.faceRect[0].top;
+		SingleDetectedFaces3.faceRect.right = detectedFaces3.faceRect[0].right;
+		SingleDetectedFaces3.faceRect.bottom = detectedFaces3.faceRect[0].bottom;
+		SingleDetectedFaces3.faceOrient = detectedFaces3.faceOrient[0];
+
+		res = ASFFaceFeatureExtract(handle, cutImg2->width, cutImg2->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg2->imageData, &SingleDetectedFaces3, &feature3);
+		if (res == MOK)
+		{
+			//拷贝feature
+			copyfeature2.featureSize = feature3.featureSize;
+			copyfeature2.feature = (MByte *)malloc(feature3.featureSize);
+			memset(copyfeature2.feature, 0, feature3.featureSize);
+			memcpy(copyfeature2.feature, feature3.feature, feature3.featureSize);
+		}
+		else
+			printf("ASFFaceFeatureExtract 2 fail: %d\n", res);
+	}
+	else
+		printf("ASFDetectFaces 2 fail: %d\n", res);
+
+
+	//第三个人脸特征
+	IplImage* img3 = cvLoadImage("syq.jpg");
+	ASF_MultiFaceInfo detectedFaces4 = { 0 };
+	ASF_SingleFaceInfo SingleDetectedFaces4 = { 0 };
+	ASF_FaceFeature feature4 = { 0 };
+	ASF_FaceFeature copyfeature3 = { 0 };
+	IplImage* cutImg3 = cvCreateImage(cvSize(img3->width - img3->width % 4, img3->height), IPL_DEPTH_8U, img3->nChannels);
+	CutIplImage(img3, cutImg3, 0, 0);
+	res = ASFDetectFaces(handle, cutImg3->width, cutImg3->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg3->imageData, &detectedFaces4);
+	
+	if (MOK == res)
+	{
+		SingleDetectedFaces4.faceRect.left = detectedFaces4.faceRect[0].left;
+		SingleDetectedFaces4.faceRect.top = detectedFaces4.faceRect[0].top;
+		SingleDetectedFaces4.faceRect.right = detectedFaces4.faceRect[0].right;
+		SingleDetectedFaces4.faceRect.bottom = detectedFaces4.faceRect[0].bottom;
+		SingleDetectedFaces4.faceOrient = detectedFaces4.faceOrient[0];
+
+		res = ASFFaceFeatureExtract(handle, cutImg3->width, cutImg3->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg3->imageData, &SingleDetectedFaces4, &feature4);
+		if (res == MOK)
+		{
+			//拷贝feature
+			copyfeature3.featureSize = feature4.featureSize;
+			copyfeature3.feature = (MByte *)malloc(feature4.featureSize);
+			memset(copyfeature3.feature, 0, feature4.featureSize);
+			memcpy(copyfeature3.feature, feature4.feature, feature4.featureSize);
+		}
+		else
+			printf("ASFFaceFeatureExtract 3 fail: %d\n", res);
+	}
+	else
+		printf("ASFDetectFaces 3 fail: %d\n", res);
+
+
+
+	// 第四个人脸特征
+	IplImage* img4 = cvLoadImage("lyp1.jpg");
+	ASF_MultiFaceInfo detectedFaces5 = { 0 };
+	ASF_SingleFaceInfo SingleDetectedFaces5 = { 0 };
+	ASF_FaceFeature feature5 = { 0 };
+	ASF_FaceFeature copyfeature4 = { 0 };
+	IplImage* cutImg4 = cvCreateImage(cvSize(img4->width - img4->width % 4, img4->height), IPL_DEPTH_8U, img4->nChannels);
+	CutIplImage(img4, cutImg4, 0, 0);
+	res = ASFDetectFaces(handle, cutImg4->width, cutImg4->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg4->imageData, &detectedFaces5);
+	if (MOK == res)
+	{
+		SingleDetectedFaces5.faceRect.left = detectedFaces5.faceRect[0].left;
+		SingleDetectedFaces5.faceRect.top = detectedFaces5.faceRect[0].top;
+		SingleDetectedFaces5.faceRect.right = detectedFaces5.faceRect[0].right;
+		SingleDetectedFaces5.faceRect.bottom = detectedFaces5.faceRect[0].bottom;
+		SingleDetectedFaces5.faceOrient = detectedFaces5.faceOrient[0];
+
+		res = ASFFaceFeatureExtract(handle, cutImg4->width, cutImg4->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg4->imageData, &SingleDetectedFaces5, &feature5);
+		if (res == MOK)
+		{
+			//拷贝feature
+			copyfeature4.featureSize = feature5.featureSize;
+			copyfeature4.feature = (MByte *)malloc(feature5.featureSize);
+			memset(copyfeature4.feature, 0, feature5.featureSize);
+			memcpy(copyfeature4.feature, feature5.feature, feature5.featureSize);
+		}
+		else
+			printf("ASFFaceFeatureExtract 4 fail: %d\n", res);
+	}
+	else
+		printf("ASFDetectFaces 4 fail: %d\n", res);
+
+
+
+	// 第五个人脸特征
+	IplImage* img5 = cvLoadImage("zwl.jpg");
+	ASF_MultiFaceInfo detectedFaces6 = { 0 };
+	ASF_SingleFaceInfo SingleDetectedFaces6 = { 0 };
+	ASF_FaceFeature feature6 = { 0 };
+	ASF_FaceFeature copyfeature5 = { 0 };
+	IplImage* cutImg5 = cvCreateImage(cvSize(img5->width - img5->width % 4, img5->height), IPL_DEPTH_8U, img5->nChannels);
+	CutIplImage(img5, cutImg5, 0, 0);
+	res = ASFDetectFaces(handle, cutImg5->width, cutImg5->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg5->imageData, &detectedFaces6);
+	if (MOK == res)
+	{
+		SingleDetectedFaces6.faceRect.left = detectedFaces6.faceRect[0].left;
+		SingleDetectedFaces6.faceRect.top = detectedFaces6.faceRect[0].top;
+		SingleDetectedFaces6.faceRect.right = detectedFaces6.faceRect[0].right;
+		SingleDetectedFaces6.faceRect.bottom = detectedFaces6.faceRect[0].bottom;
+		SingleDetectedFaces6.faceOrient = detectedFaces6.faceOrient[0];
+
+		res = ASFFaceFeatureExtract(handle, cutImg5->width, cutImg5->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg5->imageData, &SingleDetectedFaces6, &feature6);
+		if (res == MOK)
+		{
+			//拷贝feature
+			copyfeature5.featureSize = feature5.featureSize;
+			copyfeature5.feature = (MByte* )malloc(feature5.featureSize);
+			memset(copyfeature5.feature, 0, feature5.featureSize);
+			memcpy(copyfeature5.feature, feature5.feature, feature5.featureSize);
+		}
+		else
+			printf("ASFFaceFeatureExtract 5 fail: %d\n", res);
+	}
+	else
+		printf("ASFDetectFaces 5 fail: %d\n", res);
+
+	//销毁图片人脸特征提取引擎
+	res = ASFUninitEngine(handle); 
+	if (res != MOK)   printf("ALUninitEngine fail: %d\n", res); 
+	else   printf("ALUninitEngine sucess: %d\n", res);
+
+	//初始化视频人脸识别接口
+	res = ASFInitEngine(ASF_DETECT_MODE_VIDEO, ASF_OP_0_HIGHER_EXT, 16
+		, 1, mask, &handle);
+	if (res != MOK)
+		printf("ASFInitEngine fail: %d\n", res);
+	else
+		printf("ASFInitEngine sucess: %d\n", res);
+
+	while (1)
+	{
+		Mat frame,img;  //定义一个Mat变量，用于存储每一帧的图像
+		capture >> frame;  //读取当前帧
+		//capture >> img;
+		//imshow("读取视频", frame);  //显示当前帧
+		//waitKey(1);  //延时30ms
+		//cvtColor(frame,img,CV_BGR2GRAY);
+		imwrite("8.bmp", frame);
+		CvFont font;
+		IplImage img_Ipl = IplImage(frame);       //将cv::Mat转为IplImage类
+		IplImage* im8 = cvLoadImage("8.bmp");
+		cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 1, 1, 0, 0, 4);//设置字体号数及其粗细
+		cvPutText(&img_Ipl, "face name:", cvPoint(0, 20), &font, CV_RGB(255, 0, 0));//设置输出信息，位置以及颜色
+		cvPutText(&img_Ipl, "face num:", cvPoint(0, 40), &font, CV_RGB(255, 0, 0));//设置输出信息，位置以及颜色
+		IplImage* img1 = cvLoadImage("8.bmp");
+		ASF_MultiFaceInfo detectedFaces2 = { 0 };
+		ASF_SingleFaceInfo SingleDetectedFaces2 = { 0 };
+		ASF_FaceFeature feature2 = { 0 };
+		IplImage* cutImg1 = cvCreateImage(cvSize(img1->width - img1->width % 4, img1->height), IPL_DEPTH_8U, img1->nChannels);
+		CutIplImage(img1, cutImg1, 0, 0);
+		res = ASFDetectFaces(handle, cutImg1->width, cutImg1->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg1->imageData, &detectedFaces2);
+		if (MOK == res)
+		{
+			SingleDetectedFaces2.faceRect.left = detectedFaces2.faceRect[0].left;
+			SingleDetectedFaces2.faceRect.top = detectedFaces2.faceRect[0].top;
+			SingleDetectedFaces2.faceRect.right = detectedFaces2.faceRect[0].right;
+			SingleDetectedFaces2.faceRect.bottom = detectedFaces2.faceRect[0].bottom;
+			SingleDetectedFaces2.faceOrient = detectedFaces2.faceOrient[0];
+
+			res = ASFFaceFeatureExtract(handle, cutImg1->width, cutImg1->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg1->imageData, &SingleDetectedFaces2, &feature2);
+
+		}
+		else
+			printf("SingleDetectedFaces1: %d\n", res);
+		//printf("left:%d\n", detectedFaces2.faceRect[0].left);
+		//printf("righ:%d\n", detectedFaces2.faceRect[0].right);
+		//printf("top:%d\n", detectedFaces2.faceRect[0].top);
+		//printf("bottom:%d\n", detectedFaces2.faceRect[0].bottom);
+		
+		// 第一人与视频单人脸特征比对
+		MFloat confidenceLevel=0;
+		res = ASFFaceFeatureCompare(handle, &copyfeature1, &feature2, &confidenceLevel);
+		/*if (res != MOK)
+			printf("ASFFaceFeatureCompare fail 1: %d\n", res);
+		else
+			printf("ASFFaceFeatureCompare sucess l: %lf\n", confidenceLevel*100);*/
+
+		//第一人特征比较
+		MFloat confidenceLeve2=0;
+		res = ASFFaceFeatureCompare(handle, &copyfeature2, &feature2, &confidenceLeve2);
+		/*if (res != MOK)
+			printf("ASFFaceFeatureCompare fail 2: %d\n", res);
+		else
+			printf("ASFFaceFeatureCompare sucess 2: %lf\n", confidenceLeve2*100);*/
+
+		//第三人特征比较
+		MFloat confidenceLeve3=0;
+		res = ASFFaceFeatureCompare(handle, &copyfeature3, &feature2, &confidenceLeve3);
+		/*if (res != MOK)
+			printf("ASFFaceFeatureCompare fail 3: %d\n", res);
+		else
+			printf("ASFFaceFeatureCompare sucess 3: %lf\n", confidenceLeve3*100);*/
+
+		//第四人特征比较
+		MFloat confidenceLeve4=0;
+		res = ASFFaceFeatureCompare(handle, &copyfeature4, &feature2, &confidenceLeve4);
+		/*if (res != MOK)
+			printf("ASFFaceFeatureCompare fail 4: %d\n", res);
+		else
+			printf("ASFFaceFeatureCompare sucess 4: %lf\n", confidenceLeve4*100);*/
+
+		//第五人特征比较
+		MFloat confidenceLeve5=0;
+		res = ASFFaceFeatureCompare(handle, &copyfeature5, &feature2, &confidenceLeve5);
+		//if (res != MOK)
+			//printf("ASFFaceFeatureCompare fail 5: %d\n", res);
+		//else
+			//printf("ASFFaceFeatureCompare sucess 5: %lf\n", confidenceLeve5*100);
+
+
+
+		MInt32 processMask = ASF_AGE;
+		res = ASFProcess(handle, cutImg1->width, cutImg1->height, ASVL_PAF_RGB24_B8G8R8, (MUInt8*)cutImg1->imageData, &detectedFaces2, processMask);
+		/*if (res != MOK)
+			printf("ASFProcess fail: %d\n", res);
+
+
+		else
+			printf("ASFProcess sucess: %d\n", res);*/
+
+		
+		ASF_AgeInfo ageInfo = { 0 };
+		res = ASFGetAge(handle, &ageInfo);
+		/*if (res != MOK)
+			printf("ASFGetAge fail: %d\n", res);
+		else
+			printf("ASFGetAge sucess: %d\n", res);
+		printf("人脸个数：%d\n", ageInfo.num);*/
+		cvPutText(&img_Ipl, d[ageInfo.num], cvPoint(180, 40), &font, CV_RGB(0, 255, 0));//显示人脸个数
+		
+			a[0] = { confidenceLevel };
+			a[1] = { confidenceLeve2 };
+			a[2] = { confidenceLeve3 };
+			a[3] = { confidenceLeve4 };
+			a[4] = { confidenceLeve5 };
+			index_max = 0;
+			for (i = 1; i < 5; ++i)
+			{
+				if (a[i] >= a[index_max])
+				{
+					index_max = i;
+				}
+
+			}
+			if(ageInfo.num>0)
+				rectangle(frame, Point(detectedFaces2.faceRect[0].left, detectedFaces2.faceRect[0].top), Point(detectedFaces2.faceRect[0].right, detectedFaces2.faceRect[0].bottom), Scalar(0, 255, 0), 1, 1, 0); //大于阈值输出姓名信息
+		printf("最大值%f\n", a[index_max]);
+      switch (a[index_max]>0)
+	    case 1:	switch (a[index_max] >= 0.30)//设定阈值
+		{
+			case 0: {cvPutText(&img_Ipl, "Unknown", cvPoint(200, 20), &font, CV_RGB(255, 0, 0)); break; }//小于阈值输出NO
+			case 1: {cvPutText(&img_Ipl, b[index_max], cvPoint(200, 20), &font, CV_RGB(0, 255, 0)); rectangle(frame, Point(detectedFaces2.faceRect[0].left, detectedFaces2.faceRect[0].top), Point(detectedFaces2.faceRect[0].right, detectedFaces2.faceRect[0].bottom), Scalar(0, 255, 0), 1, 1, 0); break; }//大于阈值输出姓名信息
+			
+		}
+	 
+		imshow("读取视频", frame);  //显示当前帧
+		
+		waitKey(30);
+
+	}
+	
+
+}
+
+// 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
+// 调试程序: F5 或调试 >“开始调试”菜单
+
+// 入门提示: 
+//   1. 使用解决方案资源管理器窗口添加/管理文件
+//   2. 使用团队资源管理器窗口连接到源代码管理
+//   3. 使用输出窗口查看生成输出和其他消息
+//   4. 使用错误列表窗口查看错误
+//   5. 转到“项目”>“添加新项”以创建新的代码文件，或转到“项目”>“添加现有项”以将现有代码文件添加到项目
+//   6. 将来，若要再次打开此项目，请转到“文件”>“打开”>“项目”并选择 .sln 文件
